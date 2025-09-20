@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline Twist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'dark-bg': '#030712',
+              'surface': '#111827',
+              'cyan-glow': {
+                'DEFAULT': '#0891B2',
+                'light': '#22D3EE'
+              },
+              'amber-glow': {
+                'DEFAULT': '#F59E0B',
+                'light': '#FBBF24',
+              },
+              'text-primary': '#F9FAFB',
+              'text-secondary': '#D1D5DB',
+            },
+            fontFamily: {
+              'display': ['"Orbitron"', 'sans-serif'],
+              'body': ['"Roboto Mono"', 'monospace'],
+            },
+            keyframes: {
+              scaleIn: {
+                '0%': { transform: 'scale(0.95)', opacity: '0' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              grain: {
+                '0%, 100%': { transform: 'translate(0, 0)' },
+                '10%': { transform: 'translate(-5%, -10%)' },
+                '20%': { transform: 'translate(-15%, 5%)' },
+                '30%': { transform: 'translate(7%, -25%)' },
+                '40%': { transform: 'translate(-5%, 25%)' },
+                '50%': { transform: 'translate(-15%, 10%)' },
+                '60%': { transform: 'translate(15%, 0%)' },
+                '70%': { transform: 'translate(0%, 15%)' },
+                '80%': { transform: 'translate(3%, 35%)' },
+                '90%': { transform: 'translate(-10%, 10%)' },
+              }
+            },
+            animation: {
+              'scale-in': 'scaleIn 0.5s ease-out forwards',
+              'fade-in': 'fadeIn 1s ease-out forwards',
+              'grain': 'grain 8s steps(10) infinite',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .film-grain {
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        z-index: 100;
+        pointer-events: none;
+        background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAAAAUVBMVEWFhYWDg4N3d3dtbW19fX3CwsIFBQUiIiIrKyuDg4bHx8aOjo4ZGRk9PT2Ojo5GRkZSUlRaWlrz8/NBQUF3d3diYmKrq6uBgYJxcXHY2NixsbGnp6eTraURYLIoAAAARklEQVR42tSVwwKAIBAD5e+9d9EtgyoZ7wuy6g2rO9Q4BCS2yG9PMoUdIYlB2Bua/gJPxAo2gMCdIe+j2FhERhIgnQD1EG2IESseAkkEpAIDAwAcQ1fQo9g0iAAAAABJRU5ErkJggg==);
+        animation: grain 1s steps(4) infinite;
+        opacity: 0.08;
+      }
+
+      body {
+        font-family: 'Roboto Mono', monospace;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="text-text-primary">
+    <div class="film-grain"></div>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
