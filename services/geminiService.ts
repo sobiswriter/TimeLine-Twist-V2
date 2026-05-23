@@ -174,7 +174,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
         fullPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for the following alternate history event: "${safePromptContent}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope.`;
         
         const response = await ai.models.generateImages({
-            model: 'imagen-3.0-generate-002',
+            model: 'imagen-4.0-fast-generate-001',
             prompt: fullPrompt,
             config: {
                 numberOfImages: 1,
@@ -198,7 +198,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 };
 
 export const getDrillDownText = async (event: HistoricalEvent, timelineContext: Consequence[], drillDownEvent: Consequence): Promise<string> => {
-    const model = '';
+    const model = 'gemini-2.5-flash-lite';
     const historySoFar = timelineContext
         .filter(c => c.type === 'event' || c.type === 'summary')
         .map(c => c.type === 'event' ? `- ${c.year}: ${c.event}`: `- ${c.event}`)
