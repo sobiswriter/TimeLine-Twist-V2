@@ -139,7 +139,7 @@ const createSafeImagePrompt = async (eventText: string): Promise<string> => {
 **Instructions:**
 1.  **Visualize the Scene:** Read the original event and imagine it as a powerful, dramatic scene in a film.
 2.  **Describe the Visuals:** Describe the key elements: the setting, the atmosphere, the lighting, and the mood.
-3.  **Focus on Implication, Not Depiction:** Do NOT describe explicit violence, gore, death, or suffering. Instead, use visual storytelling to *imply* the event's gravity and outcome. For example, instead of a battle, describe the dramatic sky, the tension on soldiers' faces, or the symbolic aftermath.
+3.  **Focus on Implication, Not Depiction:** Do NOT describe explicit violence, gore, death, suffering, or hateful symbolism. Instead, use visual storytelling to *imply* the event's gravity and outcome. For example, instead of a battle, describe the dramatic sky, the tension on soldiers' faces, or the symbolic aftermath.
 4.  **Create a Rich Prompt:** Your output should be a single, descriptive paragraph.
 
 **Original Event:** "${eventText}"
@@ -151,7 +151,7 @@ const createSafeImagePrompt = async (eventText: string): Promise<string> => {
       model: model,
       contents: prompt,
       config: {
-        systemInstruction: "You are an AI assistant that rewrites descriptions of historical events into safe, cinematic prompts for an image generation model. You focus on evocative visual storytelling, avoiding sensitive or explicit content while preserving the event's core meaning and atmosphere.",
+        systemInstruction: "You are an AI assistant that rewrites descriptions of historical events into safe, cinematic prompts for an image generation model. You focus on evocative visual storytelling, avoiding sensitive or explicit content while preserving the event's core meaning and atmosphere. Do not try to evade safety policies; if needed, generalize identities, avoid extremist references, and keep depictions non-graphic and policy-compliant.",
         temperature: 0.6,
         maxOutputTokens: 200,
         thinkingConfig: { thinkingBudget: 0 }

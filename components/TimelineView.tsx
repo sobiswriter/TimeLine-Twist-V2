@@ -18,9 +18,10 @@ interface TimelineViewProps {
   onReset: () => void;
   onSimulationComplete: () => void;
   onDrillDown: (consequence: Consequence) => void;
+  onRetryImage: (consequence: Consequence) => void;
 }
 
-const TimelineView: React.FC<TimelineViewProps> = ({ isLoading, event, consequences, commentary, error, onReset, onSimulationComplete, onDrillDown }) => {
+const TimelineView: React.FC<TimelineViewProps> = ({ isLoading, event, consequences, commentary, error, onReset, onSimulationComplete, onDrillDown, onRetryImage }) => {
   const [visibleCount, setVisibleCount] = useState(0);
   const [isNarrating, setIsNarrating] = useState(false);
 
@@ -175,7 +176,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ isLoading, event, consequen
                 <div key={key} className="mb-8 relative animate-fade-in">
                   <div className="absolute w-4 h-4 bg-cyan-glow rounded-full top-1 border-4 border-dark-bg -left-[1.2rem] md:-left-[1.65rem]" style={{boxShadow: '0 0 8px theme(colors.cyan-glow.DEFAULT)'}}></div>
                   <div className="space-y-3">
-                    <ImageWithLoader isLoading={c.imageIsLoading ?? false} src={c.imageUrl} alt={c.event} />
+                    <ImageWithLoader
+                      isLoading={c.imageIsLoading ?? false}
+                      src={c.imageUrl}
+                      alt={c.event}
+                      onRetry={c.imageUrl === 'error' ? () => onRetryImage(c) : undefined}
+                      isRetrying={c.imageIsLoading ?? false}
+                    />
                     <p className="text-amber-glow font-bold text-xl sm:text-2xl font-display">{c.year}</p>
                     <p className="text-text-primary text-base sm:text-lg leading-relaxed">{c.event}</p>
                     <button onClick={() => onDrillDown(c)} className="flex items-center gap-2 text-sm bg-cyan-glow/10 border border-cyan-glow/50 text-cyan-glow-light px-3 py-1 rounded-md hover:bg-cyan-glow/20 transition-colors disabled:opacity-50">
