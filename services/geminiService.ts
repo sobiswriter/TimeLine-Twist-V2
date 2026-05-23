@@ -132,17 +132,75 @@ export const getCommentatorRemark = async (prompt: string): Promise<string> => {
   }
 };
 
+
+const RISKY_KEYWORDS = [
+  'blood', 'gore', 'dismember', 'torture', 'execution', 'behead', 'corpse', 'murder',
+  'suicide', 'self-harm', 'rape', 'sexual assault', 'abuse', 'nude', 'nudity', 'genital',
+  'child', 'minor', 'terrorist', 'extremist', 'nazi', 'hitler', 'drug', 'overdose', 'weapon', 'gun', 'knife'
+];
+
+const hasRiskyContentSignals = (text: string): boolean => {
+  const normalized = text.toLowerCase();
+  return RISKY_KEYWORDS.some(keyword => normalized.includes(keyword));
+};
+
+const reviewAndRefineImagePrompt = async (
+  originalEventText: string,
+  candidatePrompt: string,
+  contextNote?: string
+): Promise<string> => {
+  const model = 'gemini-2.5-flash-lite';
+  const reviewPrompt = `You are a safety-focused visual prompt reviewer.
+
+Task:
+- Evaluate whether the candidate prompt is likely to be blocked by image safety filters.
+- If low risk, return the candidate prompt with only light polish.
+- If medium/high risk, rewrite it to remain policy-safe while preserving era, atmosphere, symbolism, and narrative tone.
+- Never use identity-evasion tactics, lookalikes, blurred-face hints, or coded references to restricted real individuals.
+- Keep the output as one cinematic paragraph.
+
+Original event context: "${originalEventText}"
+Candidate prompt: "${candidatePrompt}"
+Reviewer context note: "${contextNote ?? 'none'}"
+
+Return only the final revised prompt paragraph.`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model,
+      contents: reviewPrompt,
+      config: {
+        systemInstruction: "You are a strict prompt safety reviewer for image generation. Preserve creative intent while minimizing block risk and complying with policy.",
+        temperature: 0.3,
+        maxOutputTokens: 220,
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+
+    return response.text.trim();
+  } catch (error) {
+    console.error('Error reviewing safe image prompt, using candidate.', error);
+    return candidatePrompt;
+  }
+};
+
 const createSafeImagePrompt = async (eventText: string): Promise<string> => {
   const model = 'gemini-2.5-flash-lite';
-  const prompt = `You are an expert film director creating a prompt for a concept artist. Your task is to translate a historical event description into a visually rich, cinematic, and evocative scene description that is safe for an AI image generator.
+  const riskyInput = hasRiskyContentSignals(eventText);
+  const prompt = `You are an expert film director creating a prompt for a concept artist. Your task is to translate a historical event description into a visually rich, cinematic, and policy-safe scene description for an AI image generator.
 
 **Instructions:**
-1.  **Visualize the Scene:** Read the original event and imagine it as a powerful, dramatic scene in a film.
-2.  **Describe the Visuals:** Describe the key elements: the setting, the atmosphere, the lighting, and the mood.
-3.  **Focus on Implication, Not Depiction:** Do NOT describe explicit violence, gore, death, or suffering. Instead, use visual storytelling to *imply* the event's gravity and outcome. For example, instead of a battle, describe the dramatic sky, the tension on soldiers' faces, or the symbolic aftermath.
-4.  **Create a Rich Prompt:** Your output should be a single, descriptive paragraph.
+1. **Preserve Theme and Aesthetic:** Keep the core historical theme, era, mood, and symbolism.
+2. **Depict Safely:** Avoid graphic injury, explicit violence, sexual content, minors in danger, and actionable wrongdoing details.
+3. **Use Indirect Storytelling:** If the source is risky, shift focus to aftermath, architecture, environment, uniforms, objects, silhouettes, smoke, banners, and lighting.
+4. **No Identity Evasion:** Do not attempt to sneak in restricted people or groups using lookalikes, hidden clues, masked/blurred identity tricks, or coded references.
+5. **Historical Abstraction Rule:** For risky named individuals, depict a generic anonymous historical setting that preserves era and mood without identifying any real person.
+6. **No Prohibited Terms:** Do not include words that imply gore, sexual explicitness, or direct harm.
+7. **Output Format:** Return one cinematic paragraph only.
 
 **Original Event:** "${eventText}"
+
+**Risk Signals Present:** ${riskyInput ? 'yes' : 'no'}
 
 **Cinematic and Safe Image Prompt:**`;
 
@@ -151,31 +209,25 @@ const createSafeImagePrompt = async (eventText: string): Promise<string> => {
       model: model,
       contents: prompt,
       config: {
-        systemInstruction: "You are an AI assistant that rewrites descriptions of historical events into safe, cinematic prompts for an image generation model. You focus on evocative visual storytelling, avoiding sensitive or explicit content while preserving the event's core meaning and atmosphere.",
-        temperature: 0.6,
-        maxOutputTokens: 200,
+        systemInstruction: "You rewrite historical event descriptions into policy-safe cinematic image prompts. Preserve theme and atmosphere while replacing sensitive depictions with symbolic, non-graphic visual cues. Never preserve or imply restricted identities through lookalikes, blurred faces, coded symbols, or oblique hints. Use anonymous historical abstraction when needed.",
+        temperature: 0.5,
+        maxOutputTokens: 220,
         thinkingConfig: { thinkingBudget: 0 }
       }
     });
     return response.text.trim();
   } catch (error) {
-    console.error("Error creating a safe image prompt, using original.", error);
-    // If the rewriter fails, fall back to the original prompt.
-    // It might still fail, but it's better than nothing.
-    return eventText;
+    console.error("Error creating a safe image prompt, using sanitized fallback.", error);
+    return `A cinematic historical tableau inspired by ${eventText}, shown through symbolic aftermath, dramatic weather, period architecture, and tense expressions, with no explicit harm.`;
   }
 };
 
 
 export const generateImage = async (prompt: string): Promise<string> => {
-    let fullPrompt = '';
-    try {
-        const safePromptContent = await createSafeImagePrompt(prompt);
-        fullPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for the following alternate history event: "${safePromptContent}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope.`;
-        
+    const tryGenerate = async (imagePrompt: string): Promise<string | null> => {
         const response = await ai.models.generateImages({
             model: 'imagen-4.0-fast-generate-001',
-            prompt: fullPrompt,
+            prompt: imagePrompt,
             config: {
                 numberOfImages: 1,
                 outputMimeType: 'image/jpeg',
@@ -183,19 +235,47 @@ export const generateImage = async (prompt: string): Promise<string> => {
             },
         });
 
-        if (response.generatedImages && response.generatedImages.length > 0 && response.generatedImages[0].image?.imageBytes) {
-             const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-             return `data:image/jpeg;base64,${base64ImageBytes}`;
-        } else {
-             // Handle cases where the API call was successful but returned no images (e.g. safety filters)
-             console.error("Image generation returned no images. Original prompt:", prompt, "Full prompt used:", fullPrompt, "API Response:", response);
-             return "error";
+        if (response.generatedImages?.[0]?.image?.imageBytes) {
+            return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
         }
+
+        console.error('Image generation returned no images for prompt:', imagePrompt, 'Response:', response);
+        return null;
+    };
+
+    try {
+        const riskyInput = hasRiskyContentSignals(prompt);
+
+        if (!riskyInput) {
+            const standardPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for the following alternate history event: "${prompt}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope.`;
+            const standardResult = await tryGenerate(standardPrompt);
+            return standardResult ?? 'error';
+        }
+
+        const safePromptContent = await createSafeImagePrompt(prompt);
+        const primaryPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for this alternate-history scene: "${safePromptContent}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope. Keep depiction non-graphic and policy-safe. Use anonymous, non-identifiable subjects only.`;
+        const primaryResult = await tryGenerate(primaryPrompt);
+        if (primaryResult) return primaryResult;
+
+        const fallbackPrompt = `Create a symbolic, policy-safe historical scene that preserves the same era and mood as: "${safePromptContent}". Focus on environment, costumes, architecture, weather, smoke, and silhouettes. Avoid identifiable faces and all references to real restricted figures. No explicit harm, no graphic detail.`;
+        const fallbackResult = await tryGenerate(fallbackPrompt);
+        if (fallbackResult) return fallbackResult;
+
+        const postFailureReviewedPrompt = await reviewAndRefineImagePrompt(
+            prompt,
+            fallbackPrompt,
+            'previous-safe-prompts-failed-image-generation'
+        );
+        const postFailureResult = await tryGenerate(postFailureReviewedPrompt);
+        if (postFailureResult) return postFailureResult;
+
+        return 'error';
     } catch (error) {
-        console.error("Error generating image. Original prompt:", prompt, "Full prompt used:", fullPrompt, "Error:", error);
-        return "error"; // Return a specific marker for a failed image generation
+        console.error('Error generating image. Original prompt:', prompt, 'Error:', error);
+        return 'error';
     }
 };
+
 
 export const getDrillDownText = async (event: HistoricalEvent, timelineContext: Consequence[], drillDownEvent: Consequence): Promise<string> => {
     const model = 'gemini-2.5-flash-lite';
