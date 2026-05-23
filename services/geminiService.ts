@@ -136,7 +136,7 @@ export const getCommentatorRemark = async (prompt: string): Promise<string> => {
 const RISKY_KEYWORDS = [
   'blood', 'gore', 'dismember', 'torture', 'execution', 'behead', 'corpse', 'murder',
   'suicide', 'self-harm', 'rape', 'sexual assault', 'abuse', 'nude', 'nudity', 'genital',
-  'child', 'minor', 'terrorist', 'extremist', 'drug', 'overdose', 'weapon', 'gun', 'knife'
+  'child', 'minor', 'terrorist', 'extremist', 'nazi', 'hitler', 'drug', 'overdose', 'weapon', 'gun', 'knife'
 ];
 
 const hasRiskyContentSignals = (text: string): boolean => {
@@ -152,9 +152,11 @@ const createSafeImagePrompt = async (eventText: string): Promise<string> => {
 **Instructions:**
 1. **Preserve Theme and Aesthetic:** Keep the core historical theme, era, mood, and symbolism.
 2. **Depict Safely:** Avoid graphic injury, explicit violence, sexual content, minors in danger, and actionable wrongdoing details.
-3. **Use Indirect Storytelling:** If the source is risky, shift focus to aftermath, architecture, environment, uniforms, objects, facial emotion, silhouettes, smoke, banners, and lighting.
-4. **No Prohibited Terms:** Do not include words that imply gore, sexual explicitness, or direct harm.
-5. **Output Format:** Return one cinematic paragraph only.
+3. **Use Indirect Storytelling:** If the source is risky, shift focus to aftermath, architecture, environment, uniforms, objects, silhouettes, smoke, banners, and lighting.
+4. **No Identity Evasion:** Do not attempt to sneak in restricted people or groups using lookalikes, hidden clues, masked/blurred identity tricks, or coded references.
+5. **Historical Abstraction Rule:** For risky named individuals, depict a generic anonymous historical setting that preserves era and mood without identifying any real person.
+6. **No Prohibited Terms:** Do not include words that imply gore, sexual explicitness, or direct harm.
+7. **Output Format:** Return one cinematic paragraph only.
 
 **Original Event:** "${eventText}"
 
@@ -167,7 +169,7 @@ const createSafeImagePrompt = async (eventText: string): Promise<string> => {
       model: model,
       contents: prompt,
       config: {
-        systemInstruction: "You rewrite historical event descriptions into policy-safe cinematic image prompts. Preserve theme and atmosphere while replacing sensitive depictions with symbolic, non-graphic visual cues.",
+        systemInstruction: "You rewrite historical event descriptions into policy-safe cinematic image prompts. Preserve theme and atmosphere while replacing sensitive depictions with symbolic, non-graphic visual cues. Never preserve or imply restricted identities through lookalikes, blurred faces, coded symbols, or oblique hints. Use anonymous historical abstraction when needed.",
         temperature: 0.5,
         maxOutputTokens: 220,
         thinkingConfig: { thinkingBudget: 0 }
@@ -211,11 +213,11 @@ export const generateImage = async (prompt: string): Promise<string> => {
         }
 
         const safePromptContent = await createSafeImagePrompt(prompt);
-        const primaryPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for this alternate-history scene: "${safePromptContent}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope. Keep depiction non-graphic and policy-safe.`;
+        const primaryPrompt = `Create a dramatic, cinematic, high-quality photorealistic image for this alternate-history scene: "${safePromptContent}". Style: dark, moody, atmospheric, high-contrast lighting, epic scope. Keep depiction non-graphic and policy-safe. Use anonymous, non-identifiable subjects only.`;
         const primaryResult = await tryGenerate(primaryPrompt);
         if (primaryResult) return primaryResult;
 
-        const fallbackPrompt = `Create a symbolic, policy-safe historical scene that preserves the same era and mood as: "${safePromptContent}". Focus on environment, costumes, architecture, weather, smoke, and emotional expressions. No explicit harm, no graphic detail.`;
+        const fallbackPrompt = `Create a symbolic, policy-safe historical scene that preserves the same era and mood as: "${safePromptContent}". Focus on environment, costumes, architecture, weather, smoke, and silhouettes. Avoid identifiable faces and all references to real restricted figures. No explicit harm, no graphic detail.`;
         const fallbackResult = await tryGenerate(fallbackPrompt);
         if (fallbackResult) return fallbackResult;
 
