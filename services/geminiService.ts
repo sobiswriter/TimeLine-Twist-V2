@@ -198,7 +198,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
 };
 
 export const getDrillDownText = async (event: HistoricalEvent, timelineContext: Consequence[], drillDownEvent: Consequence): Promise<string> => {
-    const model = '';
+    const model = 'gemini-2.5-flash-lite';
     const historySoFar = timelineContext
         .filter(c => c.type === 'event' || c.type === 'summary')
         .map(c => c.type === 'event' ? `- ${c.year}: ${c.event}`: `- ${c.event}`)
