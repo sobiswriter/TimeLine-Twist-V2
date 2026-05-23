@@ -9,8 +9,8 @@
 ## ✨ Features
 
 - **Alternate History Simulation**: Choose from predefined events or create your own "what if" scenarios
-- **AI-Powered Timelines**: Gemini 2.5 Flash generates compelling, dramatic narratives
-- **Visual Storytelling**: Imagen AI creates evocative images for each historical event
+- **AI-Powered Timelines**: Gemini 2.5 Flash Lite generates compelling, dramatic narratives
+- **Visual Storytelling**: Imagen 4.0 Fast creates evocative images for each historical event
 - **Interactive Drill-Down**: Click on any event for detailed analysis and deeper insights
 - **Theatrical Commentary**: AI commentator narrates the timeline with dramatic flair
 - **Text-to-Speech**: Listen to the commentary with built-in speech synthesis
@@ -25,8 +25,8 @@
 - **Vite** - Lightning-fast build tool and dev server
 
 ### AI & APIs
-- **Google Gemini 2.5 Flash** - Advanced language model for timeline generation
-- **Google Imagen 3.0** - AI image generation for historical events
+- **Google Gemini 2.5 Flash Lite** - Advanced language model for timeline generation
+- **Google Imagen 4.0 Fast** - AI image generation for historical events
 - **Web Speech API** - Browser-native text-to-speech synthesis
 
 ### Development
