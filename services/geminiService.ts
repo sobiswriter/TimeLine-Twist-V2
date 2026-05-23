@@ -144,6 +144,46 @@ const hasRiskyContentSignals = (text: string): boolean => {
   return RISKY_KEYWORDS.some(keyword => normalized.includes(keyword));
 };
 
+const reviewAndRefineImagePrompt = async (
+  originalEventText: string,
+  candidatePrompt: string,
+  contextNote?: string
+): Promise<string> => {
+  const model = 'gemini-2.5-flash-lite';
+  const reviewPrompt = `You are a safety-focused visual prompt reviewer.
+
+Task:
+- Evaluate whether the candidate prompt is likely to be blocked by image safety filters.
+- If low risk, return the candidate prompt with only light polish.
+- If medium/high risk, rewrite it to remain policy-safe while preserving era, atmosphere, symbolism, and narrative tone.
+- Never use identity-evasion tactics, lookalikes, blurred-face hints, or coded references to restricted real individuals.
+- Keep the output as one cinematic paragraph.
+
+Original event context: "${originalEventText}"
+Candidate prompt: "${candidatePrompt}"
+Reviewer context note: "${contextNote ?? 'none'}"
+
+Return only the final revised prompt paragraph.`;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model,
+      contents: reviewPrompt,
+      config: {
+        systemInstruction: "You are a strict prompt safety reviewer for image generation. Preserve creative intent while minimizing block risk and complying with policy.",
+        temperature: 0.3,
+        maxOutputTokens: 220,
+        thinkingConfig: { thinkingBudget: 0 }
+      }
+    });
+
+    return response.text.trim();
+  } catch (error) {
+    console.error('Error reviewing safe image prompt, using candidate.', error);
+    return candidatePrompt;
+  }
+};
+
 const createSafeImagePrompt = async (eventText: string): Promise<string> => {
   const model = 'gemini-2.5-flash-lite';
   const riskyInput = hasRiskyContentSignals(eventText);
@@ -220,6 +260,14 @@ export const generateImage = async (prompt: string): Promise<string> => {
         const fallbackPrompt = `Create a symbolic, policy-safe historical scene that preserves the same era and mood as: "${safePromptContent}". Focus on environment, costumes, architecture, weather, smoke, and silhouettes. Avoid identifiable faces and all references to real restricted figures. No explicit harm, no graphic detail.`;
         const fallbackResult = await tryGenerate(fallbackPrompt);
         if (fallbackResult) return fallbackResult;
+
+        const postFailureReviewedPrompt = await reviewAndRefineImagePrompt(
+            prompt,
+            fallbackPrompt,
+            'previous-safe-prompts-failed-image-generation'
+        );
+        const postFailureResult = await tryGenerate(postFailureReviewedPrompt);
+        if (postFailureResult) return postFailureResult;
 
         return 'error';
     } catch (error) {
