@@ -4,6 +4,8 @@ interface ImageWithLoaderProps {
   isLoading: boolean;
   src?: string;
   alt: string;
+  onRetry?: () => void;
+  isRetrying?: boolean;
 }
 
 // A themed, self-contained SVG fallback image.
@@ -17,7 +19,7 @@ interface ImageWithLoaderProps {
 const FALLBACK_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjkwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9IiMxMTE4MjciLz48dGV4dCB4PSI4MCIgeT0iNDgiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiNGNTlFMEIiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkNIUk9OTy1WSVNJT04gT0ZGTElORTwvdGV4dD48dGV4dCB4PSI4MCIgeT0iNjIiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iI0QxRDVEQiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UmVjYWxpYnJhdGluZyBhZXRoZXItbWF0cml4Li4uPC90ZXh0Pjwvc3ZnPg==';
 
 
-const ImageWithLoader: React.FC<ImageWithLoaderProps> = ({ isLoading, src, alt }) => {
+const ImageWithLoader: React.FC<ImageWithLoaderProps> = ({ isLoading, src, alt, onRetry, isRetrying = false }) => {
   if (isLoading) {
     return (
       <div className="w-full aspect-video bg-surface/80 rounded-lg animate-pulse border border-cyan-glow/10"></div>
@@ -26,11 +28,22 @@ const ImageWithLoader: React.FC<ImageWithLoaderProps> = ({ isLoading, src, alt }
 
   if (!src || src === 'error') {
     return (
-       <img
-        src={FALLBACK_IMAGE}
-        alt={`Image generation failed for: "${alt}". Displaying fallback.`}
-        className="w-full aspect-video object-cover rounded-lg border border-red-500/30"
-      />
+      <div className="space-y-3">
+        <img
+          src={FALLBACK_IMAGE}
+          alt={`Image generation failed for: "${alt}". Displaying fallback.`}
+          className="w-full aspect-video object-cover rounded-lg border border-red-500/30"
+        />
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            disabled={isRetrying}
+            className="text-sm bg-amber-glow/10 border border-amber-glow/40 text-amber-glow px-3 py-1 rounded-md hover:bg-amber-glow/20 transition-colors disabled:opacity-50"
+          >
+            {isRetrying ? 'Regenerating...' : 'Retry with safer phrasing'}
+          </button>
+        )}
+      </div>
     );
   }
 

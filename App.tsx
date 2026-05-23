@@ -127,6 +127,30 @@ const App: React.FC = () => {
       });
   };
 
+  const handleRetryImage = useCallback((consequence: Consequence) => {
+    if (consequence.type !== 'event') return;
+
+    setAppState(prevState => ({
+      ...prevState,
+      consequences: prevState.consequences.map(c =>
+        c.id === consequence.id
+          ? { ...c, imageIsLoading: true }
+          : c
+      ),
+    }));
+
+    generateImage(consequence.event).then(imageUrl => {
+      setAppState(currentState => ({
+        ...currentState,
+        consequences: currentState.consequences.map(c =>
+          c.id === consequence.id
+            ? { ...c, imageUrl, imageIsLoading: false }
+            : c
+        ),
+      }));
+    });
+  }, []);
+
   const handleReset = () => {
     setAppState(prevState => ({
       ...prevState,
@@ -246,6 +270,7 @@ The user is now asking questions about this completed timeline.`;
             onReset={handleReset}
             onSimulationComplete={handleSimulationComplete}
             onDrillDown={handleOpenDrillDown}
+            onRetryImage={handleRetryImage}
           />
         );
       default:
